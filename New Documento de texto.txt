@@ -1,0 +1,91 @@
+Aquí tienes el **brief del MVP** directamente en el chat (sin código):
+
+---
+
+# Extensión Chrome (MV3) — Delegación de firmas en Smartsheet
+
+**Última actualización:** hoy
+
+## Resumen del objetivo
+
+Al estar en una hoja de Smartsheet, selecciono una fila, abro la extensión, elijo una **plantilla de aprobación** y el sistema **prepara columnas**, **lanza el flujo** y **hace seguimiento** con **notificaciones** hasta completar firmas y marcar **Aprobado**.
+
+## Alcance
+
+* **Sitio objetivo:** `https://app.smartsheet.com/*`
+* **Vista objetivo:** hoja (grid) con selección de filas.
+* **Versión de extensión:** Manifest V3 (MV3).
+
+## Piezas (sin código)
+
+* **Popup (control remoto):** seleccionar plantilla, botón Iniciar, últimas 5 solicitudes, ajustes de recordatorio.
+* **Content script (panel lateral en Smartsheet):** detecta fila seleccionada, verifica/crea columnas requeridas, muestra etapas y estado.
+* **Service worker (eventos):** recordatorios con alarms, notificaciones, coordinación entre piezas.
+* **Manifest (DNI):** declara nombre, versión, permisos y piezas.
+
+## Permisos mínimos (conceptuales)
+
+* `storage` — plantillas y preferencias.
+* `notifications` — avisos de seguimiento.
+* `alarms` — recordatorios programados.
+* `scripting` **o** `activeTab` — inyección/ejecución en la página activa.
+* `host_permissions`: `https://app.smartsheet.com/*` — actuar dentro de Smartsheet.
+
+## Datos a almacenar
+
+* **Plantillas de aprobación** (nombre, etapas, columnas requeridas).
+* **Preferencias** (frecuencia de recordatorios, on/off notificaciones).
+* **Historial ligero** (últimas N solicitudes con id de fila y estado).
+
+## Flujos principales (alto nivel)
+
+1. Usuario selecciona fila en Smartsheet.
+2. Abre popup, elige plantilla y pulsa **Iniciar**.
+3. Service worker configura recordatorios y notificaciones.
+4. Content script verifica/crea columnas, inicializa estado y muestra panel lateral.
+5. Seguimiento por etapas → notificaciones → acción final (marcar **Aprobado**).
+
+## Riesgos y mitigaciones
+
+* **Cambios de UI en Smartsheet** → selectores resilientes y detecciones con fallback.
+* **Permisos excesivos** → principio de **menor privilegio**.
+* **Service worker dormido** → basar seguimiento en **alarms** y rehidratar estado desde `storage`.
+
+## Métricas de éxito (MVP)
+
+* Tiempo hasta “Aprobado”.
+* % de creación automática de columnas sin errores.
+* % de flujos con recordatorios.
+* Satisfacción del usuario (encuesta 1–5 en popup).
+
+## Plantillas (rellenar por el usuario)
+
+* **Compra menor:** Jefe → Finanzas
+
+  * Columnas: Firma Jefe, Fecha Aprobación Jefe, Firma Finanzas, Fecha Aprobación Finanzas, Estado General.
+* **Viaje:** Jefe → RR.HH. → Finanzas
+
+  * Columnas: (definir)
+* **Contratación:** Jefe → Legal → Finanzas
+
+  * Columnas: (definir)
+
+## Glosario breve
+
+* **MV3:** modelo actual de extensiones de Chrome.
+* **Popup:** ventanita de control al pulsar el icono.
+* **Content script:** “manos” que actúan en la página.
+* **Service worker:** “cerebro por eventos” que coordina tareas.
+* **Permisos:** llaves para usar APIs del navegador.
+* **Host permissions:** llaves para dominios concretos.
+* **Alarms/Notifications:** recordatorios y avisos del sistema.
+* **Estado global:** resumen de progreso del flujo.
+
+## Próximos pasos
+
+* **Lección 4:** Preparar carpeta, archivos vacíos, cargar unpacked en `chrome://extensions` (sin código).
+* **Lección 5:** Primer prototipo mínimo (mostraré código cuando lo indiques con “mostrar código”).
+
+---
+
+¿**siguiente**?

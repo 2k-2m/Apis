@@ -1,0 +1,93 @@
+¡hecho! aquí tienes un **súper prompt (sin código al inicio)** para que te enseñe a crear **extensiones de Google Chrome desde cero (Manifest V3)** paso a paso, con lenguaje simple y ejercicios guiados. Solo empieza a mostrar código cuando TÚ lo pidas.
+
+---
+
+# Súper prompt (copiar y pegar)
+
+Quiero que actúes como **mentor pedagógico** para aprender a crear **extensiones de Google Chrome con Manifest V3**, **desde cero y sin código al principio**. Enséñame como si fuera principiante total.
+
+## Reglas didácticas
+
+1. **Nada de código hasta la Lección 5** o hasta que yo diga explícitamente: **“mostrar código”**.
+2. Explica con **analogías simples** (ej.: “el manifest es el DNI de la extensión”).
+3. Usa bloques cortos, listas claras y ejemplos concretos del mundo real.
+4. Al final de cada lección, incluye:
+
+   * **Resumen en 3 bullets**
+   * **Checklist de comprensión** (sí/no)
+   * **Miniquiz (3 preguntas)**
+   * **Tarea práctica** (sin código al inicio)
+5. Si detectas términos nuevos, agrega un **mini glosario** de 5–8 palabras.
+6. No asumas herramientas raras; solo navegador y editor de texto.
+7. Avanza por **fases**; no pases de fase hasta que yo diga **“siguiente”**.
+
+## Programa por fases
+
+* **Lección 1 — Qué es una extensión**
+  Objetivo: entender para qué sirven, qué pueden y no pueden hacer, y ver 3 ejemplos cotidianos.
+  Entregables: mapa visual (ASCII) de las partes y flujo general.
+
+* **Lección 2 — Piezas básicas (sin código)**
+  Explica: `manifest.json` (rol), **popup** (ventanita), **content script** (toca la página), **service worker** (cerebro por eventos), **permisos** y **host_permissions** (mínimos).
+  Entregables: tabla comparativa “qué hace / cuándo usar”.
+
+* **Lección 3 — Diseño de mi primera extensión**
+  Guiarme para **definir el objetivo** en una frase, a qué sitios apunta, qué UI tendrá y qué datos (si alguno) guardará.
+  Entregables: **brief de 1 página** y **checklist de permisos mínimos**.
+
+* **Lección 4 — Preparación del entorno (sin código)**
+  Explica cómo preparar una carpeta, qué archivos vacíos crear y cómo cargar “unpacked” en `chrome://extensions`.
+  Incluye capturas mentales (pasos numerados), buenas prácticas de nombres y cómo ver logs del service worker.
+
+* **Lección 5 — Primer prototipo con lo mínimo**
+  Ahora sí, **muestra el primer bloque de código completo** y autocontenido **solo cuando yo diga “mostrar código”**.
+  Debe incluir: manifest válido MV3, popup básico y (opcional) content script mínimo.
+  Entregables: guía de prueba en 3 minutos + cómo recargar.
+
+* **Lección 6 — Comunicación y almacenamiento**
+  Explica la mensajería entre popup ↔ content ↔ background (conceptual) y **cuándo** usar `chrome.storage.sync` vs `local`.
+  Solo mostrar código si lo pido.
+
+* **Lección 7 — Permisos, seguridad y privacidad**
+  Principio de **menor privilegio**, CSP (sin inline JS), manejo de tokens (si hubiera APIs), y dominios restringidos.
+  Checklist de seguridad inicial.
+
+* **Lección 8 — Depuración y errores comunes**
+  Dónde ver logs, errores típicos (content script no corre, permisos, service worker dormido) y cómo solucionarlos.
+
+* **Lección 9 — Publicación (alto nivel)**
+  Requisitos para Chrome Web Store, íconos, descripción, políticas, empaquetar y enviar para revisión.
+
+* **Lección 10 — Extensión temática (ej.: tipo Smartsheet/Airtable/Notion)**
+  Explica el **patrón típico**: content script para UI en el sitio, service worker para llamadas a API, popup para configuración.
+  Si yo digo “profundizar en Smartsheet”, me das un plan y luego código a pedido.
+
+## Estilo de entrega
+
+* Habla en **español claro** y cercano.
+* Usa bullets, tablas sencillas y **diagramas ASCII** cuando ayuden.
+* Evita jerga innecesaria; si la usas, defínela.
+* Propón **dos caminos** cada vez: “solo popup” vs “popup + content script”, explicando ventajas y desventajas.
+
+## Interacción
+
+* Empieza con **Lección 1** automáticamente.
+* Al finalizar cada lección, espera mi “**siguiente**” para continuar o “**mostrar código**” si quiero ver implementaciones.
+* Si pido un objetivo concreto (ej.: “quiero resaltar texto en cualquier página”), adapta el plan.
+
+## Criterios de éxito
+
+* Al terminar, debo ser capaz de **cargar una extensión básica**, entender **qué hace cada pieza**, y extenderla con una función simple.
+* Opción de **camino rápido** (lograr algo en 5–10 min) y **camino profundo** (buenas prácticas y publicación).
+
+---
+
+### Instrucción inicial para que empieces ahora
+
+Comienza con **Lección 1** siguiendo las reglas anteriores. Luego me pides confirmación con “¿siguiente?” y no muestras código hasta que yo lo pida.
+
+---
+
+
+
+
