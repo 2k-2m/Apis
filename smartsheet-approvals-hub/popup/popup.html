@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Approvals Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>Approvals Hub</h1>
+    <nav>
+      <button class="tab active" data-tab="firmas">Firmas</button>
+      <button class="tab" data-tab="notas">Notas</button>
+      <button class="tab" data-tab="ajustes">Ajustes</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Tab: Firmas -->
+    <section id="tab-firmas" class="tab-pane active">
+      <label for="tpl">Plantilla</label>
+      <select id="tpl"></select>
+
+      <div class="actions">
+        <button id="btn-open-panel">Abrir panel</button>
+        <button id="btn-start">Iniciar flujo</button>
+      </div>
+
+      <h3>Últimas solicitudes</h3>
+      <ul id="recent"></ul>
+    </section>
+
+    <!-- Tab: Notas (simple demo local) -->
+    <section id="tab-notas" class="tab-pane">
+      <textarea id="notes" placeholder="Notas rápidas (solo local)"></textarea>
+      <button id="save-notes">Guardar notas</button>
+      <p class="hint">Ejemplo de mini-app extra en el hub.</p>
+    </section>
+
+    <!-- Tab: Ajustes -->
+    <section id="tab-ajustes" class="tab-pane">
+      <div class="row">
+        <label><input type="checkbox" id="reminders-enabled"> Recordatorios activados</label>
+      </div>
+      <div class="row">
+        <label>Cada (horas): <input type="number" id="reminder-every" min="1" step="1" value="24"></label>
+      </div>
+      <fieldset>
+        <legend>Horario silencioso</legend>
+        <div class="row"><label><input type="checkbox" id="quiet-enabled"> Activar</label></div>
+        <div class="row">
+          <label>Desde: <input type="number" id="quiet-from" min="0" max="23" value="22"></label>
+          <label>Hasta: <input type="number" id="quiet-to" min="0" max="23" value="7"></label>
+        </div>
+      </fieldset>
+      <button id="save-prefs">Guardar ajustes</button>
+    </section>
+  </main>
+
+  <footer>
+    <small>MV3 • Smartsheet Approvals Hub</small>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

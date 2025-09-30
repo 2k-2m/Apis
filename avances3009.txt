@@ -1,0 +1,326 @@
+¡De una! Te explico cómo se está desarrollando la extensión, paso a paso y en JavaScript, desde lo básico hasta lo que ya montamos (popup + content + worker + storage + alarms + notificaciones). Voy en “capas”, cada paso suma algo nuevo.
+
+1) Núcleo mínimo: manifest.json (MV3)
+
+El manifest es el DNI de la extensión. Empezamos con lo mínimo: nombre, versión y un popup.
+
+{
+  "manifest_version": 3,
+  "name": "Mi extensión",
+  "version": "0.0.1",
+  "action": { "default_popup": "popup/popup.html" }
+}
+
+
+Qué habilita: un botón en la barra que abre tu HTML del popup.
+
+Sin permisos aún; no toca páginas.
+
+2) Agregar un popup (control remoto)
+
+Estructura simple: HTML + JS + CSS. El popup es página de extensión, aquí sí puedes usar módulos ES si quieres.
+
+popup/popup.html
+
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>Popup</title></head>
+<body>
+  <button id="ping">Ping</button>
+  <pre id="out"></pre>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
+
+
+popup/popup.js
+
+document.getElementById('ping').onclick = async () => {
+  const res = await chrome.runtime.sendMessage({ type: 'PING' });
+  document.getElementById('out').textContent = JSON.stringify(res, null, 2);
+};
+
+
+Mensaje PING: todavía no tenemos quién responda… eso llega en el siguiente paso.
+
+3) Service Worker (cerebro por eventos)
+
+En MV3 el background es un service worker. Aquí conviene no usar imports (para evitar problemas). Añadimos permisos mínimos y el worker.
+
+manifest.json (ampliado)
+
+{
+  "manifest_version": 3,
+  "name": "Mi extensión",
+  "version": "0.0.2",
+  "action": { "default_popup": "popup/popup.html" },
+  "permissions": ["storage"],
+  "background": { "service_worker": "service_worker.js" }
+}
+
+
+service_worker.js
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'PING') {
+    sendResponse({ ok: true, ts: Date.now() });
+  }
+  return true; // deja el canal abierto para respuestas async si hicieras await
+});
+
+
+Resultado: el popup ya recibe un { ok: true }.
+
+4) Content script (las manos en la página)
+
+Para tocar la página (Smartsheet), declaramos un content script que se inyecta en las URLs de interés. NO uses import aquí.
+
+manifest.json (sumamos content_scripts + host_permissions)
+
+{
+  "manifest_version": 3,
+  "name": "Mi extensión",
+  "version": "0.0.3",
+  "action": { "default_popup": "popup/popup.html" },
+  "permissions": ["storage","activeTab","scripting"],
+  "host_permissions": ["https://app.smartsheet.com/*"],
+  "background": { "service_worker": "service_worker.js" },
+  "content_scripts": [{
+    "matches": ["https://app.smartsheet.com/*"],
+    "js": ["content/contentScript.js"],
+    "run_at": "document_idle"
+  }]
+}
+
+
+content/contentScript.js
+
+// NO imports aquí
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type === 'HELLO_FROM_POPUP') {
+    sendResponse({ ok: true, inPage: location.href });
+  }
+  return true;
+});
+
+
+popup/popup.js (envía un mensaje a la pestaña activa)
+
+async function sendToActiveTab(msg) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return new Promise(r => chrome.tabs.sendMessage(tab.id, msg, r));
+}
+document.getElementById('ping').onclick = async () => {
+  const res = await sendToActiveTab({ type: 'HELLO_FROM_POPUP' });
+  document.getElementById('out').textContent = JSON.stringify(res, null, 2);
+};
+
+
+Aprendizaje clave: popup ↔ content se hace con chrome.tabs.sendMessage.
+
+5) Panel lateral embebido (overlay) en la página
+
+El content script crea un panel (DOM) y escucha acciones. Aquí nace tu UI in-page.
+
+// content/contentScript.js
+let panel;
+function openPanel() {
+  if (panel) { panel.classList.add('visible'); return; }
+  panel = document.createElement('div');
+  panel.className = 'my-panel';
+  panel.innerHTML = `
+    <div class="hdr">
+      <b>Aprobaciones</b>
+      <button id="close">×</button>
+    </div>
+    <div class="body">
+      <div>Fila: <span id="row">—</span></div>
+      <ul id="stages"></ul>
+    </div>`;
+  document.documentElement.appendChild(panel);
+  panel.querySelector('#close').onclick = () => panel.classList.remove('visible');
+}
+chrome.runtime.onMessage.addListener((msg, s, send) => {
+  if (msg?.type === 'OPEN_PANEL') { openPanel(); send({ ok: true }); }
+  return true;
+});
+
+
+El popup manda OPEN_PANEL para abrirlo.
+
+Añadimos un .css para posicionarlo y animarlo (deslizándose desde la derecha).
+
+6) Storage y estado del flujo (local/sync)
+
+Patrón básico con chrome.storage.sync (preferencias/plantillas) y local (estado por fila).
+
+// service_worker.js (snippet)
+const KEYS = { TEMPLATES:'templates', PREFS:'prefs', FLOWS:'flows' };
+
+function ssGet(k){ return new Promise(r => chrome.storage.sync.get(k, r)); }
+function ssSet(o){ return new Promise(r => chrome.storage.sync.set(o, r)); }
+function lsGet(k){ return new Promise(r => chrome.storage.local.get(k, r)); }
+function lsSet(o){ return new Promise(r => chrome.storage.local.set(o, r)); }
+
+async function getPrefs(){ return (await ssGet(KEYS.PREFS))[KEYS.PREFS] || { remindersEnabled:true }; }
+async function setPrefs(p){ await ssSet({[KEYS.PREFS]:p}); }
+
+async function getFlows(){ return (await lsGet(KEYS.FLOWS))[KEYS.FLOWS] || {}; }
+async function saveFlow(flow){
+  const dict = await getFlows(); dict[flow.rowKey] = flow;
+  await lsSet({ [KEYS.FLOWS]: dict }); return flow;
+}
+
+
+Idea: el worker es la fuente de verdad del estado.
+
+7) Mensajería completa (popup ↔ worker ↔ content)
+
+Definimos tipos de mensaje y sus payloads. (Como hicimos con MSG).
+
+// service_worker.js (handlers)
+chrome.runtime.onMessage.addListener((m, s, send) => {
+  (async () => {
+    if (m.type === 'START_FLOW') {
+      const flow = await saveFlow({ rowKey: m.payload.rowKey, templateId: m.payload.templateId, status: 'PENDING', stages: m.payload.stages });
+      send({ ok: true, flow });
+    }
+    if (m.type === 'GET_RECENT') {
+      const dict = await getFlows();
+      send({ ok: true, items: Object.values(dict).slice(-5).reverse() });
+    }
+  })();
+  return true;
+});
+
+
+popup/popup.js
+
+function sendToWorker(type, payload) {
+  return new Promise(r => chrome.runtime.sendMessage({ type, payload }, r));
+}
+
+
+Esto es lo que ya usas para iniciar flujo, leer prefs, guardar prefs, etc.
+
+8) Notificaciones y Alarms (recordatorios)
+
+MV3 favorece tareas cortas. Para “recordar”, usa chrome.alarms.
+
+// service_worker.js
+async function ensureAlarm() {
+  await chrome.alarms.clear('tick');
+  const everyMinutes = 60 * 24; // 24h
+  await chrome.alarms.create('tick', { when: Date.now() + 60000, periodInMinutes: everyMinutes });
+}
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name !== 'tick') return;
+  const dict = await getFlows();
+  const pending = Object.values(dict).filter(f => f.status === 'PENDING');
+  if (pending.length) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon48.png',
+      title: 'Recordatorio de firmas',
+      message: `${pending.length} flujo(s) pendientes`
+    });
+  }
+});
+
+
+Cuándo llamamos ensureAlarm: al instalar o cuando guardas preferencias.
+
+9) Heurística de selección de fila (DOM de Smartsheet)
+
+En el content script intentamos derivar una rowKey sin API, leyendo el DOM:
+
+function detectSelectedRowKey() {
+  // intenta row con aria-selected/foco
+  let row = document.querySelector('[role="row"][aria-selected="true"]');
+  if (!row) {
+    const cell = document.querySelector('[role="gridcell"][tabindex="0"]');
+    row = cell?.closest('[role="row"]');
+  }
+  if (!row) return null;
+
+  // usa data-row-id si existe; si no, número de fila; si no, hash texto
+  const id = row.getAttribute('data-row-id') || row.getAttribute('data-rowid') || row.id;
+  if (id) return `row:${id}`;
+
+  const header = row.querySelector('[role="rowheader"]');
+  const num = header?.textContent?.trim();
+  if (/^\d+$/.test(num || '')) return `row:num-${num}`;
+
+  const text = Array.from(row.querySelectorAll('[role="gridcell"]')).map(c => c.textContent?.trim() || '').join('|');
+  return `row:hash-${hash(text).toString(36)}`;
+}
+
+
+Lección aprendida: al ser una SPA, los selectores deben ser resilientes.
+
+10) Panel: render de etapas y acciones (content script)
+
+Recibimos del worker el estado del flujo y pintamos:
+
+function renderStages(stages) {
+  const ul = document.getElementById('ssh-stages');
+  ul.innerHTML = '';
+  stages.forEach(s => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${s.label}</span>
+      <span class="${s.done ? 'done' : 'pending'}">${s.done ? 'Hecho' : 'Pendiente'}</span>
+      ${s.done ? '' : `<button data-id="${s.id}">Marcar hecho</button>`}
+    `;
+    ul.appendChild(li);
+  });
+  ul.onclick = (e) => {
+    const id = e.target.dataset.id;
+    if (!id) return;
+    chrome.runtime.sendMessage({ type: 'MARK_STAGE_DONE', payload: { rowKey: currentRowKey, stageId: id } }, () => refreshPanel());
+  };
+}
+
+
+UX: marcar etapas desde el panel → worker actualiza → panel refresca.
+
+11) Cosas que rompían y cómo las corregimos
+
+Imports en content script → ❌ “Cannot use import statement outside a module”.
+✅ Solución: no usar imports en content scripts; definir constantes (p. ej. MSG) inline.
+
+Service worker como módulo → en algunos entornos falla el registro (Status 15).
+✅ Solución: quitar "type": "module" y hacer el worker standalone (sin imports).
+
+Receiving end does not exist → el popup envía, pero no hay content script (o falló).
+✅ Solución: revisar matches, recargar página, sanar errores del content script.
+
+12) Cómo escalar (cuando quieras “lo complicado”)
+
+Side Panel nativo (chrome.sidePanel) como alternativa al overlay.
+
+OAuth con chrome.identity.launchWebAuthFlow.
+
+API Smartsheet (crear columnas, actualizar celdas, leer rowId real).
+
+Editor de plantillas en el popup (CRUD en chrome.storage.sync).
+
+i18n (_locales/) y opciones (options_ui).
+
+Publicación en Chrome Web Store (icons, políticas, descripción, screenshots).
+
+Resumen ultra-corto
+
+Manifest (DNI) → Popup (control) → Worker (cerebro) → Content (manos).
+
+Mensajería: popup ↔ worker ↔ content.
+
+Estado en storage (sync/local).
+
+Panel in-page con DOM + CSS.
+
+Alarms + Notifications para recordatorios.
+
+Evitar imports en content y, por compatibilidad, también en worker.
+
+Si quieres, convierto esta guía en un README.md bonitísimo para tu repo o seguimos con la Lección 6 (comunicación y almacenamiento a fondo) o con el side panel. ¿Qué prefieres?
