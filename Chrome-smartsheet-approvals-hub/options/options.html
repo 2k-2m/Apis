@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Opciones — Approvals Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style> body{ font:14px system-ui; padding:16px; } textarea{ width:100%; height:320px; } </style>
+</head>
+<body>
+  <h2>Plantillas</h2>
+  <p>Edita el JSON y guarda.</p>
+  <textarea id="ta"></textarea>
+  <div style="margin-top:8px">
+    <button id="save">Guardar</button>
+    <span id="msg"></span>
+  </div>
+  <script>
+    function send(type,payload){ return new Promise(r=>chrome.runtime.sendMessage({type,payload},r)); }
+    (async()=>{ const r = await send('GET_TEMPLATES'); document.getElementById('ta').value = JSON.stringify(r.templates||[], null, 2); })();
+    document.getElementById('save').onclick = async ()=>{
+      try{
+        const data = JSON.parse(document.getElementById('ta').value);
+        await chrome.storage.sync.set({ templates: data });
+        // Opcional: forzar re-programación de alarmas llamando GET/SET_PREFS si cambiaste algo relevante
+        document.getElementById('msg').textContent = 'Guardado ✔';
+      }catch(e){ document.getElementById('msg').textContent = 'JSON inválido: '+e.message; }
+    };
+  </script>
+</body>
+</html>
