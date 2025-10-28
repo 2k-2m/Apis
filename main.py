@@ -31,11 +31,10 @@ def comments(id):
     return {'data': {'comment 1', 'comment 2'}}
 
 
-
 class Blog(BaseModel):
     tittle: str
     body: str
-    published: Optional[bool]
+    published: Optional[bool] = None
 
 @app.post("/blog")
 def createblog(request: Blog):
