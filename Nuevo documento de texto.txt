@@ -1,0 +1,21 @@
+DBeaver Community Edition (gratuito)
+
+1. Página oficial de descargas:
+   https://dbeaver.io/download/
+
+2. Pasos de instalación:
+   - Entra al enlace de arriba.
+   - Selecciona tu sistema operativo (Windows, macOS o Linux).
+   - Descarga el instalador correspondiente.
+   - Ejecuta el instalador y sigue las instrucciones en pantalla.
+
+3. Recomendación:
+   - Si usas Windows: descarga el instalador .exe.
+   - Si usas macOS: descarga el archivo .dmg.
+   - Si usas Linux: puedes usar el paquete .deb, .rpm o instalarlo vía Snap.
+
+4. Una vez instalado:
+   - Abre DBeaver.
+   - Crea una nueva conexión (Database > New Connection).
+   - Elige el motor de base de datos (MySQL, PostgreSQL, etc.).
+   - Ingresa tus credenciales y conecta.
